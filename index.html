@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aplikasi Pembaruan Data Pesanan BRSHOESCARE</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Pengaturan font Inter -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Custom styles for modal (replacing alert/confirm) */
+        .modal {
+            display: none; /* Hidden by default */
+            position: fixed; /* Stay in place */
+            z-index: 1000; /* Sit on top */
+            left: 0;
+            top: 0;
+            width: 100%; /* Full width */
+            height: 100%; /* Full height */
+            overflow: auto; /* Enable scroll if needed */
+            background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: auto;
+            padding: 24px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-indigo-50 to-purple-100 p-4 text-gray-800">
+
+    <div class="container mx-auto p-6 bg-white shadow-xl rounded-2xl border border-gray-200">
+        <h1 class="text-4xl font-extrabold text-center text-indigo-800 mb-8 leading-tight">
+            Aplikasi Pembaruan Data Pesanan BRSHOESCARE
+        </h1>
+
+        <p class="text-center text-gray-600 mb-10 max-w-2xl mx-auto">
+            Aplikasi ini terintegrasi database pesanan dan khusus dirancang untuk intern-brsc management, DILARANG MEMBAGIKAN APLIKASI INI.
+        </p>
+
+        <!-- Loading dan Error Message -->
+        <div id="loading-message" class="text-center text-indigo-600 font-semibold text-lg mb-4 hidden">Memuat data dari spreadsheet...</div>
+        <div id="error-message" class="text-center bg-red-100 text-red-700 p-3 rounded-lg mb-4 border border-red-300 hidden"></div>
+
+        <!-- Kotak PEMBAHARUAN - Sekarang di posisi pertama -->
+        <div class="bg-green-50 p-6 rounded-xl shadow-md border border-green-200 mb-10">
+            <h2 class="text-2xl font-bold text-green-700 mb-5 pb-3 border-b-2 border-green-300">
+                PEMBAHARUAN
+            </h2>
+            <div class="space-y-4">
+                <div>
+                    <label for="update-method-select" class="block text-green-800 text-sm font-medium mb-1">
+                        Pilih Metode Pembaruan
+                    </label>
+                    <select id="update-method-select" class="w-full p-3 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-400 focus:border-transparent outline-none transition-all duration-200">
+                        <option value="row-number">Perbarui Berdasarkan Nomor Baris (dari tampilan)</option>
+                        <option value="nomor-pesanan">Perbarui Berdasarkan Nomor Pesanan (kolom A)</option>
+                    </select>
+                </div>
+
+                <!-- Input Group: Perbarui Berdasarkan Nomor Baris -->
+                <div id="row-number-input-group" class="space-y-4">
+                    <div>
+                        <label for="row-index-input" class="block text-green-800 text-sm font-medium mb-1">
+                            Nomor Baris Pesanan (sesuai daftar Detail Pesanan)
+                        </label>
+                        <input
+                            type="number"
+                            id="row-index-input"
+                            class="w-full p-3 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-400 focus:border-transparent outline-none transition-all duration-200"
+                            placeholder="Masukkan nomor baris"
+                            min="1"
+                        />
+                    </div>
+                </div>
+
+                <!-- Input Group: Perbarui Berdasarkan Nomor Pesanan -->
+                <div id="nomor-pesanan-input-group" class="space-y-4 hidden">
+                    <div>
+                        <label for="nomor-pesanan-input" class="block text-green-800 text-sm font-medium mb-1">
+                            Nomor Pesanan (sesuai kolom A di sheet)
+                        </label>
+                        <input
+                            type="text"
+                            id="nomor-pesanan-input"
+                            class="w-full p-3 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-400 focus:border-transparent outline-none transition-all duration-200"
+                            placeholder="Contoh: INV-001, ORD-12345"
+                        />
+                    </div>
+                </div>
+
+                <div>
+                    <label for="new-status-value" class="block text-green-800 text-sm font-medium mb-1">
+                        Status Pesanan Baru
+                    </label>
+                    <input
+                        type="text"
+                        id="new-status-value"
+                        class="w-full p-3 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-400 focus:border-transparent outline-none transition-all duration-200"
+                        placeholder="Contoh: Dikirim, Selesai, Dibatalkan"
+                    />
+                </div>
+                
+                <div>
+                    <label for="new-invoice-value" class="block text-green-800 text-sm font-medium mb-1">
+                        Nomor Invoice Baru
+                    </label>
+                    <input
+                        type="text"
+                        id="new-invoice-value"
+                        class="w-full p-3 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-400 focus:border-transparent outline-none transition-all duration-200"
+                        placeholder="Contoh: INV-001-2024, #ABC-123"
+                    />
+                </div>
+
+                <div>
+                    <label for="new-point-value" class="block text-green-800 text-sm font-medium mb-1">
+                        Point Baru
+                    </label>
+                    <input
+                        type="text"
+                        id="new-point-value"
+                        class="w-full p-3 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-400 focus:border-transparent outline-none transition-all duration-200"
+                        placeholder="Contoh: 100, 50.5"
+                    />
+                </div>
+
+                <button
+                    id="update-button"
+                    class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                    Perbarui Data Pesanan
+                </button>
+            </div>
+
+            <!-- Area pesan status -->
+            <div id="message-area" class="mt-6 p-4 rounded-lg text-center font-medium hidden"></div>
+
+        </div>
+
+        <!-- Kotak Detail Pesanan - Sekarang di posisi kedua -->
+        <div class="bg-blue-50 p-6 rounded-xl shadow-md border border-blue-200 mb-10">
+            <h2 class="text-2xl font-bold text-blue-700 mb-5 pb-3 border-b-2 border-blue-300">
+                Detail Pesanan
+            </h2>
+            <ul id="full-data-list" class="space-y-2 text-sm max-h-96 overflow-y-auto">
+                <!-- Data lengkap (A, B, C, D, E, F) akan dirender di sini oleh JavaScript -->
+            </ul>
+        </div>
+
+        <!-- Kotak RIWAYAT - Tetap di posisi terakhir -->
+        <div class="mt-10 p-6 bg-purple-50 rounded-2xl shadow-xl border border-purple-200">
+            <h2 class="text-2xl font-bold text-purple-700 mb-5 pb-3 border-b-2 border-purple-300 text-center">
+                RIWAYAT
+            </h2>
+            <div class="flex justify-center mb-6">
+                <button
+                    id="reset-history-button"
+                    class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                    Reset Riwayat
+                </button>
+            </div>
+            <ul id="history-list" class="space-y-4">
+                <!-- Riwayat pembaruan akan dirender di sini oleh JavaScript -->
+            </ul>
+        </div>
+    </div>
+
+    <!-- Custom Confirmation Modal -->
+    <div id="confirm-modal" class="modal">
+        <div class="modal-content">
+            <p id="confirm-message" class="text-lg font-semibold mb-6"></p>
+            <div class="flex justify-center space-x-4">
+                <button id="confirm-yes" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-5 rounded-lg shadow-md hover:shadow-lg transition-all duration-200">Ya</button>
+                <button id="confirm-no" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-5 rounded-lg shadow-md hover:shadow-lg transition-all duration-200">Tidak</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // DOM Elements
+        const loadingMessage = document.getElementById('loading-message');
+        const errorMessage = document.getElementById('error-message');
+        // 'kolomADataList' is now unused as its corresponding HTML element is removed
+        // const kolomADataList = document.getElementById('kolomA-data-list'); 
+        
+        const updateMethodSelect = document.getElementById('update-method-select');
+        const rowNumberInputGroup = document.getElementById('row-number-input-group');
+        const nomorPesananInputGroup = document.getElementById('nomor-pesanan-input-group');
+
+        const rowIndexInput = document.getElementById('row-index-input'); 
+        const nomorPesananInput = document.getElementById('nomor-pesanan-input'); 
+
+        const newStatusValueInput = document.getElementById('new-status-value'); 
+        const newInvoiceValueInput = document.getElementById('new-invoice-value'); 
+        const newPointValueInput = document.getElementById('new-point-value'); 
+        
+        const updateButton = document.getElementById('update-button');
+        const messageArea = document.getElementById('message-area');
+        const fullDataList = document.getElementById('full-data-list'); 
+        const historyList = document.getElementById('history-list'); 
+        const resetHistoryButton = document.getElementById('reset-history-button');
+
+        const confirmModal = document.getElementById('confirm-modal');
+        const confirmMessage = document.getElementById('confirm-message');
+        const confirmYesBtn = document.getElementById('confirm-yes');
+        const confirmNoBtn = document.getElementById('confirm-no');
+
+        // All Gemini API related elements are removed.
+        // const draftMessageButton = document.getElementById('draft-message-button');
+        // const customerMessageDraftArea = document.getElementById('customer-message-draft-area');
+        // const explainStatusButton = document.getElementById('explain-status-button');
+        // const statusExplanationArea = document.getElementById('status-explanation-area');
+
+        let sheetData = []; // Data lengkap sheet (A, B, C, D, E, F)
+        let updateHistory = []; // Data riwayat pembaruan
+
+        // Gemini API URL and API Key are removed.
+        // const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=";
+        // const API_KEY = ""; // Canvas provides this API key at runtime
+
+        // --- Helper Functions ---
+
+        function showLoading(show) {
+            loadingMessage.classList.toggle('hidden', !show);
+            updateButton.disabled = show;
+            resetHistoryButton.disabled = show;
+            // No longer checking for draftMessageButton or explainStatusButton
+        }
+
+        function showMessage(msg, type = 'success') {
+            messageArea.textContent = msg;
+            messageArea.classList.remove('hidden', 'bg-green-100', 'text-green-700', 'border-green-300', 'bg-red-100', 'text-red-700', 'border-red-300', 'bg-blue-100', 'text-blue-700', 'border-blue-300');
+            if (type === 'success') {
+                messageArea.classList.add('bg-green-100', 'text-green-700', 'border-green-300');
+            } else if (type === 'error') {
+                messageArea.classList.add('bg-red-100', 'text-red-700', 'border-red-300');
+            } else if (type === 'info') {
+                messageArea.classList.add('bg-blue-100', 'text-blue-700', 'border-blue-300');
+            }
+        }
+
+        function showError(msg) {
+            errorMessage.textContent = msg;
+            errorMessage.classList.remove('hidden');
+        }
+
+        function clearMessages() {
+            messageArea.classList.add('hidden');
+            errorMessage.classList.add('hidden');
+            // No longer clearing Gemini API output areas
+        }
+
+        function showConfirmModal(msg, onConfirmCallback, onCancelCallback) {
+            confirmMessage.textContent = msg;
+            confirmModal.style.display = 'flex';
+
+            const handleYes = () => {
+                confirmModal.style.display = 'none';
+                confirmYesBtn.removeEventListener('click', handleYes);
+                confirmNoBtn.removeEventListener('click', handleNo);
+                onConfirmCallback();
+            };
+
+            const handleNo = () => {
+                confirmModal.style.display = 'none';
+                confirmYesBtn.removeEventListener('click', handleYes);
+                confirmNoBtn.removeEventListener('click', handleNo);
+                onCancelCallback();
+            };
+
+            confirmYesBtn.addEventListener('click', handleYes);
+            confirmNoBtn.addEventListener('click', handleNo);
+        }
+
+        // --- Render Functions ---
+
+        // 'renderKolomAData()' is no longer needed/called as its HTML element is removed.
+        // It's removed from the JS code as well for cleanliness.
+
+        function renderFullData() {
+            fullDataList.innerHTML = '';
+            // Filter out items without a valid Nomor Pesanan (colA)
+            const filteredData = sheetData.filter(item => item.colA && item.colA.toString().trim() !== '' && item.colA.toString().trim() !== 'N/A');
+            
+            if (filteredData.length === 0) {
+                fullDataList.innerHTML = '<li class="text-center text-gray-500 p-4">Tidak ada detail pesanan yang ditampilkan.</li>';
+                return;
+            }
+            
+            // Limit to the first 10 items for display and add scrollbar
+            filteredData.slice(0, 10).forEach((item) => {
+                const li = document.createElement('li');
+                li.className = 'flex flex-col bg-blue-100 p-2 rounded-md mb-2'; // Adjusted styling for standalone list
+                li.innerHTML = `
+                    <div class="flex justify-between items-center text-blue-800">
+                        <span class="font-semibold">No. Baris: ${item.id}</span>
+                        <span class="font-bold">No. Pesanan: ${item.colA || 'N/A'}</span>
+                    </div>
+                    <div class="text-xs text-blue-700 mt-1">
+                        <span class="font-medium">Pelanggan:</span> ${item.colB || 'N/A'} | 
+                        <span class="font-medium">Kode Unik:</span> ${item.colC || 'N/A'}
+                    </div>
+                    <div class="text-xs text-blue-700 mt-1">
+                        <span class="font-medium">Status:</span> ${item.colD || 'N/A'} |
+                        <span class="font-medium">Invoice:</span> ${item.colE || 'N/A'} |
+                        <span class="font-medium">Point:</span> ${item.colF || 'N/A'} 
+                    </div>
+                `;
+                fullDataList.appendChild(li);
+            });
+
+            // Add an indicator if there are more items
+            if (filteredData.length > 10) {
+                const li = document.createElement('li');
+                li.className = 'text-center text-gray-600 text-sm italic p-2';
+                li.textContent = `... dan ${filteredData.length - 10} pesanan lainnya. Gulir ke bawah.`;
+                fullDataList.appendChild(li);
+            }
+        }
+
+        function renderHistory() {
+            historyList.innerHTML = '';
+            if (updateHistory.length === 0) {
+                historyList.innerHTML = '<p class="text-center text-gray-500">Belum ada pembaruan data yang tercatat.</p>';
+                return;
+            }
+            updateHistory.forEach((entry) => {
+                const li = document.createElement('li');
+                li.className = 'bg-purple-100 p-4 rounded-lg shadow-sm flex flex-col md:flex-row md:items-center md:justify-between transition-all duration-200 hover:shadow-md';
+                
+                let changesHtml = '';
+                // Check for Status change
+                if (String(entry.statusBaru).trim() !== String(entry.statusLama).trim()) {
+                    changesHtml += `<div class="flex flex-col text-purple-800 md:ml-4 mt-2 md:mt-0 min-w-[100px]">
+                                        <span class="font-semibold">Status:</span>
+                                        <span class="text-sm text-purple-900 line-through">${entry.statusLama || 'Kosong'}</span>
+                                        <span class="text-sm text-purple-900 font-bold">${entry.statusBaru || 'N/A'}</span>
+                                    </div>`;
+                }
+                // Check for Invoice change
+                if (String(entry.invoiceBaru).trim() !== String(entry.invoiceLama).trim()) {
+                    changesHtml += `<div class="flex flex-col text-purple-800 md:ml-4 mt-2 md:mt-0 min-w-[100px]">
+                                        <span class="font-semibold">Invoice:</span>
+                                        <span class="text-sm text-purple-900 line-through">${entry.invoiceLama || 'Kosong'}</span>
+                                        <span class="text-sm text-purple-900 font-bold">${entry.invoiceBaru || 'N/A'}</span>
+                                    </div>`;
+                }
+                // Check for Point change
+                if (String(entry.pointBaru).trim() !== String(entry.pointLama).trim()) {
+                    changesHtml += `<div class="flex flex-col text-purple-800 md:ml-4 mt-2 md:mt-0 min-w-[100px]">
+                                        <span class="font-semibold">Point:</span>
+                                        <span class="text-sm text-purple-900 line-through">${entry.pointLama || 'Kosong'}</span>
+                                        <span class="text-sm text-purple-900 font-bold">${entry.pointBaru || 'N/A'}</span>
+                                    </div>`;
+                }
+
+                li.innerHTML = `
+                    <div class="flex flex-col text-purple-800 min-w-[120px]">
+                        <span class="font-semibold">Waktu:</span>
+                        <span class="text-xs text-purple-900">${entry.timestamp}</span>
+                    </div>
+                    <div class="flex flex-col text-purple-800 md:ml-4 mt-2 md:mt-0 min-w-[100px]">
+                        <span class="font-semibold">No. Pesanan:</span>
+                        <span class="text-sm text-purple-900">${entry.nomorPesanan || 'N/A'}</span>
+                    </div>
+                    <div class="flex flex-col text-purple-800 md:ml-4 mt-2 md:mt-0 min-w-[120px]">
+                        <span class="font-semibold">Pelanggan:</span>
+                        <span class="text-sm text-purple-900">${entry.namaPelanggan || 'N/A'}</span>
+                    </div>
+                    ${changesHtml}
+                    <div class="flex flex-col text-purple-800 md:ml-4 mt-2 md:mt-0 min-w-[100px]">
+                        <span class="font-semibold">Aksi:</span>
+                        <span class="text-sm text-purple-900">${entry.aksi || 'N/A'}</span>
+                    </div>
+                `;
+                historyList.appendChild(li);
+            });
+        }
+
+        // --- Fetch Data Functions (now using google.script.run) ---
+
+        function handleMainSheetDataSuccess(data) {
+            sheetData = data;
+            // 'renderKolomAData()' is removed from here as well.
+            renderFullData(); // Render data lengkap
+            showLoading(false);
+        }
+
+        function handleMainSheetDataFailure(error) {
+            console.error("Gagal mengambil data utama dari Apps Script:", error);
+            showError("Gagal memuat data dari spreadsheet. Pastikan Apps Script di-deploy dengan benar dan memiliki izin. Error: " + error.message);
+            showLoading(false);
+        }
+
+        function handleHistoryDataSuccess(data) {
+            updateHistory = data;
+            renderHistory();
+        }
+
+        function handleHistoryDataFailure(error) {
+            console.error("Gagal mengambil riwayat dari Apps Script:", error);
+        }
+
+        async function fetchMainSheetData() {
+            showLoading(true);
+            clearMessages();
+            google.script.run
+                .withSuccessHandler(handleMainSheetDataSuccess)
+                .withFailureHandler(handleMainSheetDataFailure)
+                .getMainSheetData();
+        }
+
+        async function fetchHistoryData() {
+            google.script.run
+                .withSuccessHandler(handleHistoryDataSuccess)
+                .withFailureHandler(handleHistoryDataFailure)
+                .getHistoryData();
+        }
+
+        // --- Event Handlers ---
+
+        function toggleInputFields() {
+            const selectedMethod = updateMethodSelect.value;
+            if (selectedMethod === 'row-number') {
+                rowNumberInputGroup.classList.remove('hidden');
+                nomorPesananInputGroup.classList.add('hidden');
+                nomorPesananInput.value = ''; // Clear other input
+            } else if (selectedMethod === 'nomor-pesanan') {
+                rowNumberInputGroup.classList.add('hidden');
+                nomorPesananInputGroup.classList.remove('hidden');
+                rowIndexInput.value = ''; // Clear other input
+            }
+        }
+
+        async function handleUpdate() {
+            clearMessages();
+
+            const selectedMethod = updateMethodSelect.value;
+            let targetIdentifierValue; // Input value, either row index or order number
+            let currentRowData; // The full data object for the row being updated
+
+            const newStatusValue = newStatusValueInput.value.trim();
+            const newInvoiceValue = newInvoiceValueInput.value.trim();
+            const newPointValue = newPointValueInput.value.trim();
+            
+            // Validasi: Setidaknya satu dari Status, Invoice, atau Point harus diisi
+            if (selectedMethod === 'nomor-pesanan' && nomorPesananInput.value.trim() === '') {
+                showMessage('Nomor Pesanan tidak boleh kosong.', 'error');
+                return;
+            }
+            if (selectedMethod === 'row-number' && (isNaN(parseInt(rowIndexInput.value)) || parseInt(rowIndexInput.value) < 1)) {
+                showMessage('Nomor baris tidak valid. Harap masukkan angka positif.', 'error');
+                return;
+            }
+
+            if (newStatusValue === '' && newInvoiceValue === '' && newPointValue === '') {
+                showMessage('Setidaknya satu dari Status, Invoice, atau Point harus diisi untuk diperbarui.', 'error');
+                return;
+            }
+
+
+            if (selectedMethod === 'row-number') {
+                targetIdentifierValue = parseInt(rowIndexInput.value);
+                if (targetIdentifierValue > sheetData.length) { 
+                    showMessage(`Nomor baris tidak valid. Hanya baris 1 sampai ${sheetData.length} yang terdeteksi saat ini.`, 'error');
+                    return;
+                }
+                currentRowData = sheetData.find(item => item.id === targetIdentifierValue);
+            } else if (selectedMethod === 'nomor-pesanan') {
+                targetIdentifierValue = nomorPesananInput.value.trim();
+                currentRowData = sheetData.find(item => String(item.colA).trim() === targetIdentifierValue);
+            }
+
+            if (!currentRowData) {
+                showMessage(`Data untuk '${targetIdentifierValue}' tidak ditemukan. Pastikan input benar atau coba refresh halaman.`, 'error');
+                return;
+            }
+            
+            const oldStatusValue = currentRowData.colD || 'Kosong'; 
+            const oldInvoiceValue = currentRowData.colE || 'Kosong';
+            const oldPointValue = currentRowData.colF || 'Kosong'; 
+            const nomorPesananToUpdate = currentRowData.colA; 
+
+            showLoading(true);
+
+            google.script.run
+                .withSuccessHandler((result) => {
+                    showMessage(result.message, 'success'); 
+
+                    fetchMainSheetData(); 
+                    
+                    const timestamp = new Date().toLocaleString('id-ID', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                    google.script.run
+                        .withSuccessHandler(() => {
+                            fetchHistoryData(); 
+                            showLoading(false); 
+                        })
+                        .withFailureHandler((error) => {
+                            console.warn('Gagal mencatat riwayat:', error.message);
+                            showLoading(false);
+                        })
+                        .logHistoryEntry({
+                            timestamp: timestamp,
+                            nomorPesanan: currentRowData.colA || 'N/A',   
+                            namaPelanggan: currentRowData.colB || 'N/A',  
+                            kodeUnik: currentRowData.colC || 'N/A',       
+                            statusLama: oldStatusValue,                   
+                            statusBaru: newStatusValue,                   
+                            invoiceLama: oldInvoiceValue,                 
+                            invoiceBaru: newInvoiceValue,                 
+                            pointLama: oldPointValue,                     
+                            pointBaru: newPointValue,                     
+                            aksi: "Diperbarui dari aplikasi",             
+                        });
+
+                    rowIndexInput.value = ''; 
+                    nomorPesananInput.value = '';
+                    newStatusValueInput.value = '';   
+                    newInvoiceValueInput.value = ''; 
+                    newPointValueInput.value = ''; 
+
+                })
+                .withFailureHandler((error) => {
+                    console.error('Error saat memperbarui atau mencatat riwayat:', error);
+                    showError(`Gagal memperbarui data: ${error.message}`);
+                    showMessage('', 'error');
+                    showLoading(false);
+                })
+                .updateStatusDataSheet({ 
+                    nomorPesanan: nomorPesananToUpdate, 
+                    newStatusValue: newStatusValue,
+                    newInvoiceValue: newInvoiceValue,
+                    newPointValue: newPointValue 
+                }); 
+        }
+
+        function handleResetHistoryClick() {
+            showConfirmModal(
+                "Apakah Anda yakin ingin menghapus seluruh riwayat pembaruan? Aksi ini tidak dapat dibatalkan.",
+                async () => { 
+                    clearMessages();
+                    showLoading(true);
+                    google.script.run
+                        .withSuccessHandler((result) => {
+                            showMessage(result.message, 'success');
+                            updateHistory = []; 
+                            renderHistory(); 
+                            showLoading(false);
+                        })
+                        .withFailureHandler((error) => {
+                            console.error('Error saat mereset riwayat:', error);
+                            showError(`Gagal mereset riwayat: ${error.message}`);
+                            showLoading(false);
+                        })
+                        .clearHistoryLog();
+                },
+                () => { 
+                    showMessage('Penghapusan riwayat dibatalkan.', 'info');
+                }
+            );
+        }
+
+        // All Gemini API functions are removed (functions and their calls).
+        /*
+        async function callGeminiAPI(prompt) { /* ... */ /* }
+        async function generateCustomerMessage() { /* ... */ /* }
+        async function explainOrderStatus() { /* ... */ /* }
+        */
+
+        // --- Initial Load and Event Listeners ---
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchMainSheetData();
+            fetchHistoryData();
+
+            updateButton.addEventListener('click', handleUpdate);
+            resetHistoryButton.addEventListener('click', handleResetHistoryClick);
+            
+            updateMethodSelect.addEventListener('change', toggleInputFields);
+            toggleInputFields(); 
+
+            // Removed event listeners for Gemini API buttons.
+        });
+    </script>
+</body>
+</html>
