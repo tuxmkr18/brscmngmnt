@@ -3,662 +3,90 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aplikasi Pembaruan Data Pesanan BRSHOESCARE</title>
+    <title>Aplikasi Pesanan BRSHOESCARE Anda</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Pengaturan font Inter -->
     <style>
         body {
             font-family: 'Inter', sans-serif;
+            /* Memastikan body tidak memiliki margin atau padding default browser */
+            margin: 0;
+            padding: 0;
+            overflow: hidden; /* Mencegah scrollbar jika ada sedikit overflow */
+            display: flex; /* Menggunakan flexbox untuk memposisikan konten */
+            flex-direction: column; /* Mengatur item dalam kolom */
+            min-height: 100vh; /* Memastikan body setidaknya setinggi viewport */
         }
-        /* Custom styles for modal (replacing alert/confirm) */
-        .modal {
-            display: none; /* Hidden by default */
-            position: fixed; /* Stay in place */
-            z-index: 1000; /* Sit on top */
-            left: 0;
-            top: 0;
-            width: 100%; /* Full width */
-            height: 100%; /* Full height */
-            overflow: auto; /* Enable scroll if needed */
-            background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+        /* Styling untuk iframe-container agar memenuhi seluruh viewport */
+        .iframe-container {
+            width: 100vw;   /* 100% lebar viewport */
+            height: 100%;  /* Akan mengambil sisa tinggi yang tersedia setelah disclaimer */
+            position: relative; /* Untuk posisi absolut iframe di dalamnya */
+            background-color: #f0f0f0; /* Warna latar belakang saat memuat */
+            display: flex; /* Untuk memusatkan teks loading */
             justify-content: center;
             align-items: center;
+            flex-grow: 1; /* Memungkinkan container mengambil ruang yang tersedia */
         }
-        .modal-content {
-            background-color: #fefefe;
-            margin: auto;
-            padding: 24px;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            max-width: 400px;
-            width: 90%;
+
+        .iframe-container iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: 0; /* Hapus border default iframe */
+        }
+        .iframe-loading-text {
+            /* Pastikan teks loading tetap terpusat dan terlihat */
+            z-index: 1; 
+            font-size: 1.25rem;
+            color: #6b7280;
             text-align: center;
+        }
+        /* Style untuk teks disclaimer agar selalu berada di bagian bawah */
+        .disclaimer-bar {
+            /* Mengatur posisi fixed di bagian bawah layar */
+            position: fixed; 
+            bottom: 0;       
+            left: 0;         
+            width: 100vw;    /* Lebar penuh viewport */
+            background-color: rgba(0, 0, 0, 0.7); /* Latar belakang hitam semi-transparan */
+            color: white;    /* Teks putih agar kontras */
+            text-align: center;
+            padding: 8px;
+            font-size: 0.75rem; /* Ukuran font lebih kecil */
+            z-index: 100;    /* Memastikan disclaimer berada di atas iframe */
         }
     </style>
 </head>
-<body class="min-h-screen bg-gradient-to-br from-indigo-50 to-purple-100 p-4 text-gray-800">
+<body>
 
-    <div class="container mx-auto p-6 bg-white shadow-xl rounded-2xl border border-gray-200">
-        <h1 class="text-4xl font-extrabold text-center text-indigo-800 mb-8 leading-tight">
-            Aplikasi Pembaruan Data Pesanan BRSHOESCARE
-        </h1>
+    <!-- Container utama untuk seluruh konten, termasuk iframe dan disclaimer -->
+    <!-- Ini akan menjadi flex container utama untuk mengatur iframe dan disclaimer -->
+    <!-- Tidak lagi menggunakan class container dari Tailwind karena akan membatasi lebar -->
+    <div class="flex flex-col w-screen min-h-screen">
 
-        <p class="text-center text-gray-600 mb-10 max-w-2xl mx-auto">
-            Aplikasi ini terintegrasi database pesanan dan khusus dirancang untuk intern-brsc management, DILARANG MEMBAGIKAN APLIKASI INI.
+        <!-- Div ini akan menampung iframe dan mengambil sebagian besar ruang layar -->
+        <div class="iframe-container">
+            <!-- Pesan loading yang akan disembunyikan saat iframe selesai dimuat -->
+            <div class="iframe-loading-text">Memuat aplikasi pesanan...</div>
+            
+            <!-- Iframe yang menyematkan aplikasi Google Apps Script Anda -->
+            <!-- PASTIKAN URL di atribut 'src' adalah URL Web App Apps Script Anda yang benar dan TERBARU -->
+            <iframe 
+                src="https://script.google.com/macros/s/AKfycbyVdTu9cDlus3VOCgBTL4_I0NJX2tJxwRiW3bTvfvQE5jPZlx45W4KB2_Q0FbFo5JbFCw/exec" 
+                title="Aplikasi Pembaruan Pesanan BRSHOESCARE"
+                onload="this.previousElementSibling.style.display='none';">
+            </iframe>
+        </div>
+
+        <!-- Bar disclaimer yang akan selalu terlihat di bagian bawah layar -->
+        <p class="disclaimer-bar">
+            Aplikasi ini khusus dirancang untuk intern-brsc management. DILARANG MEMBAGIKAN APLIKASI INI.
         </p>
 
-        <!-- Loading dan Error Message -->
-        <div id="loading-message" class="text-center text-indigo-600 font-semibold text-lg mb-4 hidden">Memuat data dari spreadsheet...</div>
-        <div id="error-message" class="text-center bg-red-100 text-red-700 p-3 rounded-lg mb-4 border border-red-300 hidden"></div>
-
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
-            <!-- Kolom 1: Tampilan Data Kolom A (Nomor Pesanan) -->
-            <div class="bg-blue-50 p-6 rounded-xl shadow-md border border-blue-200">
-                <h2 class="text-2xl font-bold text-blue-700 mb-5 pb-3 border-b-2 border-blue-300">
-                    5 Pesanan Teratas (Nomor Pesanan)
-                </h2>
-                <ul id="kolomA-data-list" class="space-y-3">
-                    <!-- Data Kolom A akan dirender di sini oleh JavaScript -->
-                </ul>
-            </div>
-
-            <!-- Kolom 2: Input Pembaruan Kolom D (Status), E (Invoice), F (Point) -->
-            <div class="bg-green-50 p-6 rounded-xl shadow-md border border-green-200">
-                <h2 class="text-2xl font-bold text-green-700 mb-5 pb-3 border-b-2 border-green-300">
-                    Perbarui Status, Invoice & Point Pesanan
-                </h2>
-                <div class="space-y-4">
-                    <div>
-                        <label for="update-method-select" class="block text-green-800 text-sm font-medium mb-1">
-                            Pilih Metode Pembaruan
-                        </label>
-                        <select id="update-method-select" class="w-full p-3 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-400 focus:border-transparent outline-none transition-all duration-200">
-                            <option value="row-number">Perbarui Berdasarkan Nomor Baris (dari tampilan)</option>
-                            <option value="nomor-pesanan">Perbarui Berdasarkan Nomor Pesanan (kolom A)</option>
-                        </select>
-                    </div>
-
-                    <!-- Input Group: Perbarui Berdasarkan Nomor Baris -->
-                    <div id="row-number-input-group" class="space-y-4">
-                        <div>
-                            <label for="row-index-input" class="block text-green-800 text-sm font-medium mb-1">
-                                Nomor Baris Pesanan (sesuai daftar Detail Pesanan di bawah)
-                            </label>
-                            <input
-                                type="number"
-                                id="row-index-input"
-                                class="w-full p-3 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-400 focus:border-transparent outline-none transition-all duration-200"
-                                placeholder="Masukkan nomor baris"
-                                min="1"
-                            />
-                        </div>
-                    </div>
-
-                    <!-- Input Group: Perbarui Berdasarkan Nomor Pesanan -->
-                    <div id="nomor-pesanan-input-group" class="space-y-4 hidden">
-                        <div>
-                            <label for="nomor-pesanan-input" class="block text-green-800 text-sm font-medium mb-1">
-                                Nomor Pesanan (sesuai kolom A di sheet)
-                            </label>
-                            <input
-                                type="text"
-                                id="nomor-pesanan-input"
-                                class="w-full p-3 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-400 focus:border-transparent outline-none transition-all duration-200"
-                                placeholder="Contoh: INV-001, ORD-12345"
-                            />
-                        </div>
-                    </div>
-
-                    <div>
-                        <label for="new-status-value" class="block text-green-800 text-sm font-medium mb-1">
-                            Status Pesanan Baru
-                        </label>
-                        <input
-                            type="text"
-                            id="new-status-value"
-                            class="w-full p-3 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-400 focus:border-transparent outline-none transition-all duration-200"
-                            placeholder="Contoh: Dikirim, Selesai, Dibatalkan"
-                        />
-                    </div>
-                    
-                    <div>
-                        <label for="new-invoice-value" class="block text-green-800 text-sm font-medium mb-1">
-                            Nomor Invoice Baru
-                        </label>
-                        <input
-                            type="text"
-                            id="new-invoice-value"
-                            class="w-full p-3 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-400 focus:border-transparent outline-none transition-all duration-200"
-                            placeholder="Contoh: INV-001-2024, #ABC-123"
-                        />
-                    </div>
-
-                    <div>
-                        <label for="new-point-value" class="block text-green-800 text-sm font-medium mb-1">
-                            Point Baru
-                        </label>
-                        <input
-                            type="text"
-                            id="new-point-value"
-                            class="w-full p-3 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-400 focus:border-transparent outline-none transition-all duration-200"
-                            placeholder="Contoh: 100, 50.5"
-                        />
-                    </div>
-
-                    <button
-                        id="update-button"
-                        class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                        Perbarui Data Pesanan
-                    </button>
-                </div>
-
-                <!-- Area pesan status -->
-                <div id="message-area" class="mt-6 p-4 rounded-lg text-center font-medium hidden"></div>
-
-                <!-- Tampilkan data Pesanan saat ini untuk referensi -->
-                <h3 class="text-xl font-bold text-green-700 mt-8 mb-4 border-b border-green-300 pb-2">
-                    Detail Pesanan Saat Ini:
-                </h3>
-                <ul id="full-data-list" class="space-y-2 text-sm">
-                    <!-- Data lengkap (A, B, C, D, E, F) akan dirender di sini oleh JavaScript -->
-                </ul>
-            </div>
-        </div>
-
-        <!-- Kotak RIWAYAT - Tetap di posisi terakhir -->
-        <div class="mt-10 p-6 bg-purple-50 rounded-2xl shadow-xl border border-purple-200">
-            <h2 class="text-2xl font-bold text-purple-700 mb-5 pb-3 border-b-2 border-purple-300 text-center">
-                RIWAYAT
-            </h2>
-            <div class="flex justify-center mb-6">
-                <button
-                    id="reset-history-button"
-                    class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                    Reset Riwayat
-                </button>
-            </div>
-            <ul id="history-list" class="space-y-4">
-                <!-- Riwayat pembaruan akan dirender di sini oleh JavaScript -->
-            </ul>
-        </div>
     </div>
 
-    <!-- Custom Confirmation Modal -->
-    <div id="confirm-modal" class="modal">
-        <div class="modal-content">
-            <p id="confirm-message" class="text-lg font-semibold mb-6"></p>
-            <div class="flex justify-center space-x-4">
-                <button id="confirm-yes" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-5 rounded-lg shadow-md hover:shadow-lg transition-all duration-200">Ya</button>
-                <button id="confirm-no" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-5 rounded-lg shadow-md hover:shadow-lg transition-all duration-200">Tidak</button>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        // --- API URL for Google Apps Script Web App ---
-        // PASTE YOUR DEPLOYED APPS SCRIPT WEB APP URL HERE
-        // Example: const APPS_SCRIPT_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycb.../exec';
-        const APPS_SCRIPT_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwLRqb8QWP7RsmguhAK7h2hOCcyuW1TiMNV0tbHBO_Mk107qfbTejkg_oh8tOIce9mF/exec'; 
-
-        // DOM Elements
-        const loadingMessage = document.getElementById('loading-message');
-        const errorMessage = document.getElementById('error-message');
-        const kolomADataList = document.getElementById('kolomA-data-list'); 
-        
-        const updateMethodSelect = document.getElementById('update-method-select');
-        const rowNumberInputGroup = document.getElementById('row-number-input-group');
-        const nomorPesananInputGroup = document.getElementById('nomor-pesanan-input-group');
-
-        const rowIndexInput = document.getElementById('row-index-input'); 
-        const nomorPesananInput = document.getElementById('nomor-pesanan-input'); 
-
-        const newStatusValueInput = document.getElementById('new-status-value'); 
-        const newInvoiceValueInput = document.getElementById('new-invoice-value'); 
-        const newPointValueInput = document.getElementById('new-point-value'); 
-        
-        const updateButton = document.getElementById('update-button');
-        const messageArea = document.getElementById('message-area');
-        const fullDataList = document.getElementById('full-data-list'); 
-        const historyList = document.getElementById('history-list'); 
-        const resetHistoryButton = document.getElementById('reset-history-button');
-
-        const confirmModal = document.getElementById('confirm-modal');
-        const confirmMessage = document.getElementById('confirm-message');
-        const confirmYesBtn = document.getElementById('confirm-yes');
-        const confirmNoBtn = document.getElementById('confirm-no');
-
-        let sheetData = []; // Data lengkap sheet (A, B, C, D, E, F)
-        let updateHistory = []; // Data riwayat pembaruan
-
-        // --- Helper Functions ---
-
-        function showLoading(show) {
-            loadingMessage.classList.toggle('hidden', !show);
-            updateButton.disabled = show;
-            resetHistoryButton.disabled = show;
-        }
-
-        function showMessage(msg, type = 'success') {
-            messageArea.textContent = msg;
-            messageArea.classList.remove('hidden', 'bg-green-100', 'text-green-700', 'border-green-300', 'bg-red-100', 'text-red-700', 'border-red-300', 'bg-blue-100', 'text-blue-700', 'border-blue-300');
-            if (type === 'success') {
-                messageArea.classList.add('bg-green-100', 'text-green-700', 'border-green-300');
-            } else if (type === 'error') {
-                messageArea.classList.add('bg-red-100', 'text-red-700', 'border-red-300');
-            } else if (type === 'info') {
-                messageArea.classList.add('bg-blue-100', 'text-blue-700', 'border-blue-300');
-            }
-        }
-
-        function showError(msg) {
-            errorMessage.textContent = msg;
-            errorMessage.classList.remove('hidden');
-        }
-
-        function clearMessages() {
-            messageArea.classList.add('hidden');
-            errorMessage.classList.add('hidden');
-        }
-
-        function showConfirmModal(msg, onConfirmCallback, onCancelCallback) {
-            confirmMessage.textContent = msg;
-            confirmModal.style.display = 'flex';
-
-            const handleYes = () => {
-                confirmModal.style.display = 'none';
-                confirmYesBtn.removeEventListener('click', handleYes);
-                confirmNoBtn.removeEventListener('click', handleNo);
-                onConfirmCallback();
-            };
-
-            const handleNo = () => {
-                confirmModal.style.display = 'none';
-                confirmYesBtn.removeEventListener('click', handleYes);
-                confirmNoBtn.removeEventListener('click', handleNo);
-                onCancelCallback();
-            };
-
-            confirmYesBtn.addEventListener('click', handleYes);
-            confirmNoBtn.addEventListener('click', handleNo);
-        }
-
-        // --- Render Functions ---
-
-        function renderKolomAData() {
-            kolomADataList.innerHTML = '';
-            if (sheetData.length === 0) {
-                kolomADataList.innerHTML = '<li class="text-center text-gray-500">Tidak ada data untuk ditampilkan.</li>';
-                return;
-            }
-            sheetData.slice(0, 5).forEach((item) => {
-                const li = document.createElement('li');
-                li.className = 'bg-blue-100 p-3 rounded-lg flex items-center justify-between shadow-sm hover:shadow-md transition-all duration-200';
-                li.innerHTML = `
-                    <span class="font-semibold text-blue-800">Baris ${item.id}:</span>
-                    <span class="text-blue-900 ml-2 flex-1 text-right truncate">${item.colA || 'N/A'}</span>
-                `;
-                kolomADataList.appendChild(li);
-            });
-        }
-
-        function renderFullData() {
-            fullDataList.innerHTML = '';
-            // Filter out items without a valid Nomor Pesanan (colA)
-            const filteredData = sheetData.filter(item => item.colA && item.colA.toString().trim() !== '' && item.colA.toString().trim() !== 'N/A');
-            
-            if (filteredData.length === 0) {
-                fullDataList.innerHTML = '<li class="text-center text-gray-500 p-4">Tidak ada detail pesanan yang ditampilkan.</li>';
-                return;
-            }
-            
-            // Limit to the first 10 items for display and add scrollbar
-            filteredData.slice(0, 10).forEach((item) => {
-                const li = document.createElement('li');
-                li.className = 'flex flex-col bg-blue-100 p-2 rounded-md mb-2'; // Adjusted styling for standalone list
-                li.innerHTML = `
-                    <div class="flex justify-between items-center text-blue-800">
-                        <span class="font-semibold">No. Baris: ${item.id}</span>
-                        <span class="font-bold">No. Pesanan: ${item.colA || 'N/A'}</span>
-                    </div>
-                    <div class="text-xs text-blue-700 mt-1">
-                        <span class="font-medium">Pelanggan:</span> ${item.colB || 'N/A'} | 
-                        <span class="font-medium">Kode Unik:</span> ${item.colC || 'N/A'}
-                    </div>
-                    <div class="text-xs text-blue-700 mt-1">
-                        <span class="font-medium">Status:</span> ${item.colD || 'N/A'} |
-                        <span class="font-medium">Invoice:</span> ${item.colE || 'N/A'} |
-                        <span class="font-medium">Point:</span> ${item.colF || 'N/A'} 
-                    </div>
-                `;
-                fullDataList.appendChild(li);
-            });
-
-            // Add an indicator if there are more items
-            if (filteredData.length > 10) {
-                const li = document.createElement('li');
-                li.className = 'text-center text-gray-600 text-sm italic p-2';
-                li.textContent = `... dan ${filteredData.length - 10} pesanan lainnya. Gulir ke bawah.`;
-                fullDataList.appendChild(li);
-            }
-        }
-
-        function renderHistory() {
-            historyList.innerHTML = '';
-            if (updateHistory.length === 0) {
-                historyList.innerHTML = '<p class="text-center text-gray-500">Belum ada pembaruan data yang tercatat.</p>';
-                return;
-            }
-            updateHistory.forEach((entry) => {
-                const li = document.createElement('li');
-                li.className = 'bg-purple-100 p-4 rounded-lg shadow-sm flex flex-col md:flex-row md:items-center md:justify-between transition-all duration-200 hover:shadow-md';
-                
-                let changesHtml = '';
-                // Check for Status change
-                if (String(entry.statusBaru).trim() !== String(entry.statusLama).trim()) {
-                    changesHtml += `<div class="flex flex-col text-purple-800 md:ml-4 mt-2 md:mt-0 min-w-[100px]">
-                                        <span class="font-semibold">Status:</span>
-                                        <span class="text-sm text-purple-900 line-through">${entry.statusLama || 'Kosong'}</span>
-                                        <span class="text-sm text-purple-900 font-bold">${entry.statusBaru || 'N/A'}</span>
-                                    </div>`;
-                }
-                // Check for Invoice change
-                if (String(entry.invoiceBaru).trim() !== String(entry.invoiceLama).trim()) {
-                    changesHtml += `<div class="flex flex-col text-purple-800 md:ml-4 mt-2 md:mt-0 min-w-[100px]">
-                                        <span class="font-semibold">Invoice:</span>
-                                        <span class="text-sm text-purple-900 line-through">${entry.invoiceLama || 'Kosong'}</span>
-                                        <span class="text-sm text-purple-900 font-bold">${entry.invoiceBaru || 'N/A'}</span>
-                                    </div>`;
-                }
-                // Check for Point change
-                if (String(entry.pointBaru).trim() !== String(entry.pointLama).trim()) {
-                    changesHtml += `<div class="flex flex-col text-purple-800 md:ml-4 mt-2 md:mt-0 min-w-[100px]">
-                                        <span class="font-semibold">Point:</span>
-                                        <span class="text-sm text-purple-900 line-through">${entry.pointLama || 'Kosong'}</span>
-                                        <span class="text-sm text-purple-900 font-bold">${entry.pointBaru || 'N/A'}</span>
-                                    </div>`;
-                }
-
-                li.innerHTML = `
-                    <div class="flex flex-col text-purple-800 min-w-[120px]">
-                        <span class="font-semibold">Waktu:</span>
-                        <span class="text-xs text-purple-900">${entry.timestamp}</span>
-                    </div>
-                    <div class="flex flex-col text-purple-800 md:ml-4 mt-2 md:mt-0 min-w-[100px]">
-                        <span class="font-semibold">No. Pesanan:</span>
-                        <span class="text-sm text-purple-900">${entry.nomorPesanan || 'N/A'}</span>
-                    </div>
-                    <div class="flex flex-col text-purple-800 md:ml-4 mt-2 md:mt-0 min-w-[120px]">
-                        <span class="font-semibold">Pelanggan:</span>
-                        <span class="text-sm text-purple-900">${entry.namaPelanggan || 'N/A'}</span>
-                    </div>
-                    ${changesHtml}
-                    <div class="flex flex-col text-purple-800 md:ml-4 mt-2 md:mt-0 min-w-[100px]">
-                        <span class="font-semibold">Aksi:</span>
-                        <span class="text-sm text-purple-900">${entry.aksi || 'N/A'}</span>
-                    </div>
-                `;
-                historyList.appendChild(li);
-            });
-        }
-
-        // --- Fetch Data Functions (now using fetch API for GitHub Pages hosting) ---
-
-        function handleMainSheetDataSuccess(data) {
-            sheetData = data;
-            // 'renderKolomAData()' is removed from here as well.
-            renderFullData(); // Render data lengkap
-            showLoading(false);
-        }
-
-        function handleMainSheetDataFailure(error) {
-            console.error("Gagal mengambil data utama dari Apps Script:", error);
-            showError("Gagal memuat data dari spreadsheet. Pastikan URL Apps Script diatur dengan benar, telah di-deploy, dan sheet dapat diakses. Error: " + error.message);
-            showLoading(false);
-        }
-
-        function handleHistoryDataSuccess(data) {
-            updateHistory = data;
-            renderHistory();
-        }
-
-        function handleHistoryDataFailure(error) {
-            console.error("Gagal mengambil riwayat dari Apps Script:", error);
-        }
-
-        async function fetchMainSheetData() {
-            showLoading(true);
-            clearMessages();
-            // Use fetch API to call Apps Script doGet for main data
-            try {
-                const response = await fetch(APPS_SCRIPT_WEB_APP_URL);
-                if (!response.ok) {
-                    const errorText = await response.text();
-                    throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
-                }
-                const data = await response.json();
-                handleMainSheetDataSuccess(data);
-            } catch (error) {
-                handleMainSheetDataFailure(error);
-            }
-        }
-
-        async function fetchHistoryData() {
-            // Use fetch API to call Apps Script doGet for history data
-            try {
-                const response = await fetch(`${APPS_SCRIPT_WEB_APP_URL}?action=getHistory`);
-                if (!response.ok) {
-                    const errorText = await response.text();
-                    throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
-                }
-                const data = await response.json();
-                handleHistoryDataSuccess(data);
-            } catch (error) {
-                handleHistoryDataFailure(error);
-            }
-        }
-
-        // --- Event Handlers ---
-
-        function toggleInputFields() {
-            const selectedMethod = updateMethodSelect.value;
-            if (selectedMethod === 'row-number') {
-                rowNumberInputGroup.classList.remove('hidden');
-                nomorPesananInputGroup.classList.add('hidden');
-                nomorPesananInput.value = ''; // Clear other input
-            } else if (selectedMethod === 'nomor-pesanan') {
-                rowNumberInputGroup.classList.add('hidden');
-                nomorPesananInputGroup.classList.remove('hidden');
-                rowIndexInput.value = ''; // Clear other input
-            }
-        }
-
-        async function handleUpdate() {
-            clearMessages();
-
-            const selectedMethod = updateMethodSelect.value;
-            let targetIdentifierValue; // Input value, either row index or order number
-            let currentRowData; // The full data object for the row being updated
-
-            const newStatusValue = newStatusValueInput.value.trim();
-            const newInvoiceValue = newInvoiceValueInput.value.trim();
-            const newPointValue = newPointValueInput.value.trim();
-            
-            // Validasi: Setidaknya satu dari Status, Invoice, atau Point harus diisi
-            if (selectedMethod === 'nomor-pesanan' && nomorPesananInput.value.trim() === '') {
-                showMessage('Nomor Pesanan tidak boleh kosong.', 'error');
-                return;
-            }
-            if (selectedMethod === 'row-number' && (isNaN(parseInt(rowIndexInput.value)) || parseInt(rowIndexInput.value) < 1)) {
-                showMessage('Nomor baris tidak valid. Harap masukkan angka positif.', 'error');
-                return;
-            }
-
-            if (newStatusValue === '' && newInvoiceValue === '' && newPointValue === '') {
-                showMessage('Setidaknya satu dari Status, Invoice, atau Point harus diisi untuk diperbarui.', 'error');
-                return;
-            }
-
-
-            if (selectedMethod === 'row-number') {
-                targetIdentifierValue = parseInt(rowIndexInput.value);
-                if (targetIdentifierValue > sheetData.length) { 
-                    showMessage(`Nomor baris tidak valid. Hanya baris 1 sampai ${sheetData.length} yang terdeteksi saat ini.`, 'error');
-                    return;
-                }
-                currentRowData = sheetData.find(item => item.id === targetIdentifierValue);
-            } else if (selectedMethod === 'nomor-pesanan') {
-                targetIdentifierValue = nomorPesananInput.value.trim();
-                currentRowData = sheetData.find(item => String(item.colA).trim() === targetIdentifierValue);
-            }
-
-            if (!currentRowData) {
-                showMessage(`Data untuk '${targetIdentifierValue}' tidak ditemukan. Pastikan input benar atau coba refresh halaman.`, 'error');
-                return;
-            }
-            
-            const oldStatusValue = currentRowData.colD || 'Kosong'; 
-            const oldInvoiceValue = currentRowData.colE || 'Kosong';
-            const oldPointValue = currentRowData.colF || 'Kosong'; 
-            const nomorPesananToUpdate = currentRowData.colA; 
-
-            showLoading(true);
-
-            try {
-                // Perbarui data status, invoice, dan point di sheet 'DaftarStatus' melalui Apps Script (POST request)
-                const updateResponse = await fetch(`${APPS_SCRIPT_WEB_APP_URL}?action=updateData`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ // Send action and data in the body
-                        action: 'updateData',
-                        data: {
-                            nomorPesanan: nomorPesananToUpdate, 
-                            newStatusValue: newStatusValue,
-                            newInvoiceValue: newInvoiceValue,
-                            newPointValue: newPointValue 
-                        }
-                    }),
-                });
-
-                if (!updateResponse.ok) {
-                    const errorResult = await updateResponse.json();
-                    throw new Error(`HTTP error! status: ${updateResponse.status} - ${errorResult.error || updateResponse.statusText}`);
-                }
-                const updateResult = await updateResponse.json();
-                if (updateResult.error) { // Check for application-level errors from Apps Script
-                    throw new Error(updateResult.error);
-                }
-                showMessage(updateResult.message, 'success'); 
-
-                fetchMainSheetData(); // Refresh data utama setelah update
-                
-                // Catat riwayat di Google Sheet terpisah melalui Apps Script (POST request)
-                const timestamp = new Date().toLocaleString('id-ID', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' });
-                
-                const logHistoryResponse = await fetch(`${APPS_SCRIPT_WEB_APP_URL}?action=logHistory`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ // Send action and data in the body
-                        action: 'logHistory',
-                        data: {
-                            timestamp: timestamp,
-                            nomorPesanan: currentRowData.colA || 'N/A',   
-                            namaPelanggan: currentRowData.colB || 'N/A',  
-                            kodeUnik: currentRowData.colC || 'N/A',       
-                            statusLama: oldStatusValue,                   
-                            statusBaru: newStatusValue,                   
-                            invoiceLama: oldInvoiceValue,                 
-                            invoiceBaru: newInvoiceValue,                 
-                            pointLama: oldPointValue,                     
-                            pointBaru: newPointValue,                     
-                            aksi: "Diperbarui dari aplikasi",             
-                        }
-                    }),
-                });
-
-                if (!logHistoryResponse.ok) {
-                    const errorResult = await logHistoryResponse.json();
-                    console.warn('Gagal mencatat riwayat:', errorResult.error || `Status: ${logHistoryResponse.status}`);
-                    // Warn, but don't block the main update success message
-                } else {
-                    const logResult = await logHistoryResponse.json();
-                    if (logResult.error) {
-                         console.warn('Gagal mencatat riwayat:', logResult.error);
-                    }
-                }
-                fetchHistoryData(); // Refresh riwayat dari sheet setelah pencatatan berhasil
-                showLoading(false);
-
-                rowIndexInput.value = ''; 
-                nomorPesananInput.value = '';
-                newStatusValueInput.value = '';   
-                newInvoiceValueInput.value = ''; 
-                newPointValueInput.value = ''; 
-
-            } catch (error) {
-                console.error('Error saat memperbarui atau mencatat riwayat:', error);
-                showError(`Gagal memperbarui data: ${error.message}`);
-                showMessage('', 'error');
-                showLoading(false);
-            }
-        }
-
-        async function handleResetHistoryClick() {
-            showConfirmModal(
-                "Apakah Anda yakin ingin menghapus seluruh riwayat pembaruan? Aksi ini tidak dapat dibatalkan.",
-                async () => { 
-                    clearMessages();
-                    showLoading(true);
-                    try {
-                        const response = await fetch(`${APPS_SCRIPT_WEB_APP_URL}?action=clearHistory`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ action: 'clearHistory' }), // Send action in the body
-                        });
-
-                        if (!response.ok) {
-                            const errorResult = await response.json();
-                            throw new Error(`HTTP error! status: ${response.status} - ${errorResult.error || response.statusText}`);
-                        }
-                        const result = await response.json();
-                        if (result.error) {
-                            throw new Error(result.error);
-                        }
-                        showMessage(result.message, 'success');
-                        updateHistory = []; 
-                        renderHistory(); 
-                        showLoading(false);
-                    } catch (error) {
-                        console.error('Error saat mereset riwayat:', error);
-                        showError(`Gagal mereset riwayat: ${error.message}`);
-                        showLoading(false);
-                    }
-                },
-                () => { 
-                    showMessage('Penghapusan riwayat dibatalkan.', 'info');
-                }
-            );
-        }
-
-        // --- Initial Load and Event Listeners ---
-        document.addEventListener('DOMContentLoaded', () => {
-            // Validate that the Apps Script URL is set
-            if (APPS_SCRIPT_WEB_APP_URL === 'YOUR_APPS_SCRIPT_WEB_APP_URL_HERE' || !APPS_SCRIPT_WEB_APP_URL.startsWith('https://script.google.com/macros/')) {
-                showError('Error: APPS_SCRIPT_WEB_APP_URL belum diatur atau tidak valid. Harap ganti placeholder di kode HTML.');
-                return;
-            }
-
-            fetchMainSheetData();
-            fetchHistoryData();
-
-            updateButton.addEventListener('click', handleUpdate);
-            resetHistoryButton.addEventListener('click', handleResetHistoryClick);
-            
-            updateMethodSelect.addEventListener('change', toggleInputFields);
-            toggleInputFields(); 
-        });
-    </script>
 </body>
 </html>
