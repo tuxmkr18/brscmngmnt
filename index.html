@@ -52,7 +52,7 @@
         <div id="loading-message" class="text-center text-indigo-600 font-semibold text-lg mb-4 hidden">Memuat data dari spreadsheet...</div>
         <div id="error-message" class="text-center bg-red-100 text-red-700 p-3 rounded-lg mb-4 border border-red-300 hidden"></div>
 
-        <!-- Kotak PEMBAHARUAN - Sekarang di posisi pertama -->
+        <!-- Kotak PEMBAHARUAN - Berada di posisi pertama -->
         <div class="bg-green-50 p-6 rounded-xl shadow-md border border-green-200 mb-10">
             <h2 class="text-2xl font-bold text-green-700 mb-5 pb-3 border-b-2 border-green-300">
                 PEMBAHARUAN
@@ -189,6 +189,11 @@
     </div>
 
     <script>
+        // --- API URL for Google Apps Script Web App ---
+        // PASTE YOUR DEPLOYED APPS SCRIPT WEB APP URL HERE
+        // Example: const APPS_SCRIPT_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycb.../exec';
+        const APPS_SCRIPT_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwLRqb8QWP7RsmguhAK7h2hOCcyW1TiMNV0tbHBO_Mk107qfbTejkg_oh8tOIce9mF/exec'; 
+
         // DOM Elements
         const loadingMessage = document.getElementById('loading-message');
         const errorMessage = document.getElementById('error-message');
@@ -217,18 +222,8 @@
         const confirmYesBtn = document.getElementById('confirm-yes');
         const confirmNoBtn = document.getElementById('confirm-no');
 
-        // All Gemini API related elements are removed.
-        // const draftMessageButton = document.getElementById('draft-message-button');
-        // const customerMessageDraftArea = document.getElementById('customer-message-draft-area');
-        // const explainStatusButton = document.getElementById('explain-status-button');
-        // const statusExplanationArea = document.getElementById('status-explanation-area');
-
         let sheetData = []; // Data lengkap sheet (A, B, C, D, E, F)
         let updateHistory = []; // Data riwayat pembaruan
-
-        // Gemini API URL and API Key are removed.
-        // const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=";
-        // const API_KEY = ""; // Canvas provides this API key at runtime
 
         // --- Helper Functions ---
 
@@ -236,7 +231,6 @@
             loadingMessage.classList.toggle('hidden', !show);
             updateButton.disabled = show;
             resetHistoryButton.disabled = show;
-            // No longer checking for draftMessageButton or explainStatusButton
         }
 
         function showMessage(msg, type = 'success') {
@@ -259,7 +253,6 @@
         function clearMessages() {
             messageArea.classList.add('hidden');
             errorMessage.classList.add('hidden');
-            // No longer clearing Gemini API output areas
         }
 
         function showConfirmModal(msg, onConfirmCallback, onCancelCallback) {
@@ -389,7 +382,7 @@
             });
         }
 
-        // --- Fetch Data Functions (now using google.script.run) ---
+        // --- Fetch Data Functions (now using fetch API for GitHub Pages hosting) ---
 
         function handleMainSheetDataSuccess(data) {
             sheetData = data;
@@ -400,7 +393,7 @@
 
         function handleMainSheetDataFailure(error) {
             console.error("Gagal mengambil data utama dari Apps Script:", error);
-            showError("Gagal memuat data dari spreadsheet. Pastikan Apps Script di-deploy dengan benar dan memiliki izin. Error: " + error.message);
+            showError("Gagal memuat data dari spreadsheet. Pastikan URL Apps Script diatur dengan benar, telah di-deploy, dan sheet dapat diakses. Error: " + error.message);
             showLoading(false);
         }
 
@@ -416,17 +409,33 @@
         async function fetchMainSheetData() {
             showLoading(true);
             clearMessages();
-            google.script.run
-                .withSuccessHandler(handleMainSheetDataSuccess)
-                .withFailureHandler(handleMainSheetDataFailure)
-                .getMainSheetData();
+            // Use fetch API to call Apps Script doGet for main data
+            try {
+                const response = await fetch(APPS_SCRIPT_WEB_APP_URL);
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
+                }
+                const data = await response.json();
+                handleMainSheetDataSuccess(data);
+            } catch (error) {
+                handleMainSheetDataFailure(error);
+            }
         }
 
         async function fetchHistoryData() {
-            google.script.run
-                .withSuccessHandler(handleHistoryDataSuccess)
-                .withFailureHandler(handleHistoryDataFailure)
-                .getHistoryData();
+            // Use fetch API to call Apps Script doGet for history data
+            try {
+                const response = await fetch(`${APPS_SCRIPT_WEB_APP_URL}?action=getHistory`);
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
+                }
+                const data = await response.json();
+                handleHistoryDataSuccess(data);
+            } catch (error) {
+                handleHistoryDataFailure(error);
+            }
         }
 
         // --- Event Handlers ---
@@ -495,23 +504,43 @@
 
             showLoading(true);
 
-            google.script.run
-                .withSuccessHandler((result) => {
-                    showMessage(result.message, 'success'); 
+            try {
+                // Perbarui data status, invoice, dan point di sheet 'DaftarStatus' melalui Apps Script (POST request)
+                const updateResponse = await fetch(`${APPS_SCRIPT_WEB_APP_URL}?action=updateData`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ // Send action and data in the body
+                        action: 'updateData',
+                        data: {
+                            nomorPesanan: nomorPesananToUpdate, 
+                            newStatusValue: newStatusValue,
+                            newInvoiceValue: newInvoiceValue,
+                            newPointValue: newPointValue 
+                        }
+                    }),
+                });
 
-                    fetchMainSheetData(); 
-                    
-                    const timestamp = new Date().toLocaleString('id-ID', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' });
-                    google.script.run
-                        .withSuccessHandler(() => {
-                            fetchHistoryData(); 
-                            showLoading(false); 
-                        })
-                        .withFailureHandler((error) => {
-                            console.warn('Gagal mencatat riwayat:', error.message);
-                            showLoading(false);
-                        })
-                        .logHistoryEntry({
+                if (!updateResponse.ok) {
+                    const errorResult = await updateResponse.json();
+                    throw new Error(`HTTP error! status: ${updateResponse.status} - ${errorResult.error || updateResponse.statusText}`);
+                }
+                const updateResult = await updateResponse.json();
+                if (updateResult.error) { // Check for application-level errors from Apps Script
+                    throw new Error(updateResult.error);
+                }
+                showMessage(updateResult.message, 'success'); 
+
+                fetchMainSheetData(); // Refresh data utama setelah update
+                
+                // Catat riwayat di Google Sheet terpisah melalui Apps Script (POST request)
+                const timestamp = new Date().toLocaleString('id-ID', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                
+                const logHistoryResponse = await fetch(`${APPS_SCRIPT_WEB_APP_URL}?action=logHistory`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ // Send action and data in the body
+                        action: 'logHistory',
+                        data: {
                             timestamp: timestamp,
                             nomorPesanan: currentRowData.colA || 'N/A',   
                             namaPelanggan: currentRowData.colB || 'N/A',  
@@ -523,48 +552,67 @@
                             pointLama: oldPointValue,                     
                             pointBaru: newPointValue,                     
                             aksi: "Diperbarui dari aplikasi",             
-                        });
+                        }
+                    }),
+                });
 
-                    rowIndexInput.value = ''; 
-                    nomorPesananInput.value = '';
-                    newStatusValueInput.value = '';   
-                    newInvoiceValueInput.value = ''; 
-                    newPointValueInput.value = ''; 
+                if (!logHistoryResponse.ok) {
+                    const errorResult = await logHistoryResponse.json();
+                    console.warn('Gagal mencatat riwayat:', errorResult.error || `Status: ${logHistoryResponse.status}`);
+                    // Warn, but don't block the main update success message
+                } else {
+                    const logResult = await logHistoryResponse.json();
+                    if (logResult.error) {
+                         console.warn('Gagal mencatat riwayat:', logResult.error);
+                    }
+                }
+                fetchHistoryData(); // Refresh riwayat dari sheet setelah pencatatan berhasil
+                showLoading(false);
 
-                })
-                .withFailureHandler((error) => {
-                    console.error('Error saat memperbarui atau mencatat riwayat:', error);
-                    showError(`Gagal memperbarui data: ${error.message}`);
-                    showMessage('', 'error');
-                    showLoading(false);
-                })
-                .updateStatusDataSheet({ 
-                    nomorPesanan: nomorPesananToUpdate, 
-                    newStatusValue: newStatusValue,
-                    newInvoiceValue: newInvoiceValue,
-                    newPointValue: newPointValue 
-                }); 
+                rowIndexInput.value = ''; 
+                nomorPesananInput.value = '';
+                newStatusValueInput.value = '';   
+                newInvoiceValueInput.value = ''; 
+                newPointValueInput.value = ''; 
+
+            } catch (error) {
+                console.error('Error saat memperbarui atau mencatat riwayat:', error);
+                showError(`Gagal memperbarui data: ${error.message}`);
+                showMessage('', 'error');
+                showLoading(false);
+            }
         }
 
-        function handleResetHistoryClick() {
+        async function handleResetHistoryClick() {
             showConfirmModal(
                 "Apakah Anda yakin ingin menghapus seluruh riwayat pembaruan? Aksi ini tidak dapat dibatalkan.",
                 async () => { 
                     clearMessages();
                     showLoading(true);
-                    google.script.run
-                        .withSuccessHandler((result) => {
-                            showMessage(result.message, 'success');
-                            updateHistory = []; 
-                            renderHistory(); 
-                            showLoading(false);
-                        })
-                        .withFailureHandler((error) => {
-                            console.error('Error saat mereset riwayat:', error);
-                            showError(`Gagal mereset riwayat: ${error.message}`);
-                            showLoading(false);
-                        })
-                        .clearHistoryLog();
+                    try {
+                        const response = await fetch(`${APPS_SCRIPT_WEB_APP_URL}?action=clearHistory`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ action: 'clearHistory' }), // Send action in the body
+                        });
+
+                        if (!response.ok) {
+                            const errorResult = await response.json();
+                            throw new Error(`HTTP error! status: ${response.status} - ${errorResult.error || response.statusText}`);
+                        }
+                        const result = await response.json();
+                        if (result.error) {
+                            throw new Error(result.error);
+                        }
+                        showMessage(result.message, 'success');
+                        updateHistory = []; 
+                        renderHistory(); 
+                        showLoading(false);
+                    } catch (error) {
+                        console.error('Error saat mereset riwayat:', error);
+                        showError(`Gagal mereset riwayat: ${error.message}`);
+                        showLoading(false);
+                    }
                 },
                 () => { 
                     showMessage('Penghapusan riwayat dibatalkan.', 'info');
@@ -581,6 +629,12 @@
 
         // --- Initial Load and Event Listeners ---
         document.addEventListener('DOMContentLoaded', () => {
+            // Validate that the Apps Script URL is set
+            if (APPS_SCRIPT_WEB_APP_URL === 'YOUR_APPS_SCRIPT_WEB_APP_URL_HERE' || !APPS_SCRIPT_WEB_APP_URL.startsWith('https://script.google.com/macros/')) {
+                showError('Error: APPS_SCRIPT_WEB_APP_URL belum diatur atau tidak valid. Harap ganti placeholder di kode HTML.');
+                return;
+            }
+
             fetchMainSheetData();
             fetchHistoryData();
 
@@ -589,8 +643,6 @@
             
             updateMethodSelect.addEventListener('change', toggleInputFields);
             toggleInputFields(); 
-
-            // Removed event listeners for Gemini API buttons.
         });
     </script>
 </body>
