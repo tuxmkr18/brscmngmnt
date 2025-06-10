@@ -41,7 +41,7 @@
 
     <div class="container mx-auto p-6 bg-white shadow-xl rounded-2xl border border-gray-200">
         <h1 class="text-4xl font-extrabold text-center text-indigo-800 mb-8 leading-tight">
-            App Pembaruan Data Pesanan BRSHOESCARE
+            Aplikasi Pembaruan Data Pesanan BRSHOESCARE
         </h1>
 
         <p class="text-center text-gray-600 mb-10 max-w-2xl mx-auto">
@@ -52,110 +52,119 @@
         <div id="loading-message" class="text-center text-indigo-600 font-semibold text-lg mb-4 hidden">Memuat data dari spreadsheet...</div>
         <div id="error-message" class="text-center bg-red-100 text-red-700 p-3 rounded-lg mb-4 border border-red-300 hidden"></div>
 
-        <!-- Kotak PEMBAHARUAN - Berada di posisi pertama -->
-        <div class="bg-green-50 p-6 rounded-xl shadow-md border border-green-200 mb-10">
-            <h2 class="text-2xl font-bold text-green-700 mb-5 pb-3 border-b-2 border-green-300">
-                PEMBAHARUAN
-            </h2>
-            <div class="space-y-4">
-                <div>
-                    <label for="update-method-select" class="block text-green-800 text-sm font-medium mb-1">
-                        Pilih Metode Pembaruan
-                    </label>
-                    <select id="update-method-select" class="w-full p-3 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-400 focus:border-transparent outline-none transition-all duration-200">
-                        <option value="row-number">Perbarui Berdasarkan Nomor Baris (dari tampilan)</option>
-                        <option value="nomor-pesanan">Perbarui Berdasarkan Nomor Pesanan (kolom A)</option>
-                    </select>
-                </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
+            <!-- Kolom 1: Tampilan Data Kolom A (Nomor Pesanan) -->
+            <div class="bg-blue-50 p-6 rounded-xl shadow-md border border-blue-200">
+                <h2 class="text-2xl font-bold text-blue-700 mb-5 pb-3 border-b-2 border-blue-300">
+                    5 Pesanan Teratas (Nomor Pesanan)
+                </h2>
+                <ul id="kolomA-data-list" class="space-y-3">
+                    <!-- Data Kolom A akan dirender di sini oleh JavaScript -->
+                </ul>
+            </div>
 
-                <!-- Input Group: Perbarui Berdasarkan Nomor Baris -->
-                <div id="row-number-input-group" class="space-y-4">
+            <!-- Kolom 2: Input Pembaruan Kolom D (Status), E (Invoice), F (Point) -->
+            <div class="bg-green-50 p-6 rounded-xl shadow-md border border-green-200">
+                <h2 class="text-2xl font-bold text-green-700 mb-5 pb-3 border-b-2 border-green-300">
+                    Perbarui Status, Invoice & Point Pesanan
+                </h2>
+                <div class="space-y-4">
                     <div>
-                        <label for="row-index-input" class="block text-green-800 text-sm font-medium mb-1">
-                            Nomor Baris Pesanan (sesuai daftar Detail Pesanan)
+                        <label for="update-method-select" class="block text-green-800 text-sm font-medium mb-1">
+                            Pilih Metode Pembaruan
                         </label>
-                        <input
-                            type="number"
-                            id="row-index-input"
-                            class="w-full p-3 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-400 focus:border-transparent outline-none transition-all duration-200"
-                            placeholder="Masukkan nomor baris"
-                            min="1"
-                        />
+                        <select id="update-method-select" class="w-full p-3 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-400 focus:border-transparent outline-none transition-all duration-200">
+                            <option value="row-number">Perbarui Berdasarkan Nomor Baris (dari tampilan)</option>
+                            <option value="nomor-pesanan">Perbarui Berdasarkan Nomor Pesanan (kolom A)</option>
+                        </select>
                     </div>
-                </div>
 
-                <!-- Input Group: Perbarui Berdasarkan Nomor Pesanan -->
-                <div id="nomor-pesanan-input-group" class="space-y-4 hidden">
+                    <!-- Input Group: Perbarui Berdasarkan Nomor Baris -->
+                    <div id="row-number-input-group" class="space-y-4">
+                        <div>
+                            <label for="row-index-input" class="block text-green-800 text-sm font-medium mb-1">
+                                Nomor Baris Pesanan (sesuai daftar Detail Pesanan di bawah)
+                            </label>
+                            <input
+                                type="number"
+                                id="row-index-input"
+                                class="w-full p-3 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-400 focus:border-transparent outline-none transition-all duration-200"
+                                placeholder="Masukkan nomor baris"
+                                min="1"
+                            />
+                        </div>
+                    </div>
+
+                    <!-- Input Group: Perbarui Berdasarkan Nomor Pesanan -->
+                    <div id="nomor-pesanan-input-group" class="space-y-4 hidden">
+                        <div>
+                            <label for="nomor-pesanan-input" class="block text-green-800 text-sm font-medium mb-1">
+                                Nomor Pesanan (sesuai kolom A di sheet)
+                            </label>
+                            <input
+                                type="text"
+                                id="nomor-pesanan-input"
+                                class="w-full p-3 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-400 focus:border-transparent outline-none transition-all duration-200"
+                                placeholder="Contoh: INV-001, ORD-12345"
+                            />
+                        </div>
+                    </div>
+
                     <div>
-                        <label for="nomor-pesanan-input" class="block text-green-800 text-sm font-medium mb-1">
-                            Nomor Pesanan (sesuai kolom A di sheet)
+                        <label for="new-status-value" class="block text-green-800 text-sm font-medium mb-1">
+                            Status Pesanan Baru
                         </label>
                         <input
                             type="text"
-                            id="nomor-pesanan-input"
+                            id="new-status-value"
                             class="w-full p-3 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-400 focus:border-transparent outline-none transition-all duration-200"
-                            placeholder="Contoh: INV-001, ORD-12345"
+                            placeholder="Contoh: Dikirim, Selesai, Dibatalkan"
                         />
                     </div>
+                    
+                    <div>
+                        <label for="new-invoice-value" class="block text-green-800 text-sm font-medium mb-1">
+                            Nomor Invoice Baru
+                        </label>
+                        <input
+                            type="text"
+                            id="new-invoice-value"
+                            class="w-full p-3 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-400 focus:border-transparent outline-none transition-all duration-200"
+                            placeholder="Contoh: INV-001-2024, #ABC-123"
+                        />
+                    </div>
+
+                    <div>
+                        <label for="new-point-value" class="block text-green-800 text-sm font-medium mb-1">
+                            Point Baru
+                        </label>
+                        <input
+                            type="text"
+                            id="new-point-value"
+                            class="w-full p-3 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-400 focus:border-transparent outline-none transition-all duration-200"
+                            placeholder="Contoh: 100, 50.5"
+                        />
+                    </div>
+
+                    <button
+                        id="update-button"
+                        class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        Perbarui Data Pesanan
+                    </button>
                 </div>
 
-                <div>
-                    <label for="new-status-value" class="block text-green-800 text-sm font-medium mb-1">
-                        Status Pesanan Baru
-                    </label>
-                    <input
-                        type="text"
-                        id="new-status-value"
-                        class="w-full p-3 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-400 focus:border-transparent outline-none transition-all duration-200"
-                        placeholder="Contoh: Dikirim, Selesai, Dibatalkan"
-                    />
-                </div>
-                
-                <div>
-                    <label for="new-invoice-value" class="block text-green-800 text-sm font-medium mb-1">
-                        Nomor Invoice Baru
-                    </label>
-                    <input
-                        type="text"
-                        id="new-invoice-value"
-                        class="w-full p-3 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-400 focus:border-transparent outline-none transition-all duration-200"
-                        placeholder="Contoh: INV-001-2024, #ABC-123"
-                    />
-                </div>
+                <!-- Area pesan status -->
+                <div id="message-area" class="mt-6 p-4 rounded-lg text-center font-medium hidden"></div>
 
-                <div>
-                    <label for="new-point-value" class="block text-green-800 text-sm font-medium mb-1">
-                        Point Baru
-                    </label>
-                    <input
-                        type="text"
-                        id="new-point-value"
-                        class="w-full p-3 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-400 focus:border-transparent outline-none transition-all duration-200"
-                        placeholder="Contoh: 100, 50.5"
-                    />
-                </div>
-
-                <button
-                    id="update-button"
-                    class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                    Perbarui Data Pesanan
-                </button>
+                <!-- Tampilkan data Pesanan saat ini untuk referensi -->
+                <h3 class="text-xl font-bold text-green-700 mt-8 mb-4 border-b border-green-300 pb-2">
+                    Detail Pesanan Saat Ini:
+                </h3>
+                <ul id="full-data-list" class="space-y-2 text-sm">
+                    <!-- Data lengkap (A, B, C, D, E, F) akan dirender di sini oleh JavaScript -->
+                </ul>
             </div>
-
-            <!-- Area pesan status -->
-            <div id="message-area" class="mt-6 p-4 rounded-lg text-center font-medium hidden"></div>
-
-        </div>
-
-        <!-- Kotak Detail Pesanan - Sekarang di posisi kedua -->
-        <div class="bg-blue-50 p-6 rounded-xl shadow-md border border-blue-200 mb-10">
-            <h2 class="text-2xl font-bold text-blue-700 mb-5 pb-3 border-b-2 border-blue-300">
-                Detail Pesanan
-            </h2>
-            <ul id="full-data-list" class="space-y-2 text-sm max-h-96 overflow-y-auto">
-                <!-- Data lengkap (A, B, C, D, E, F) akan dirender di sini oleh JavaScript -->
-            </ul>
         </div>
 
         <!-- Kotak RIWAYAT - Tetap di posisi terakhir -->
@@ -192,13 +201,12 @@
         // --- API URL for Google Apps Script Web App ---
         // PASTE YOUR DEPLOYED APPS SCRIPT WEB APP URL HERE
         // Example: const APPS_SCRIPT_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycb.../exec';
-        const APPS_SCRIPT_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbyVdTu9cDlus3VOCgBTL4_I0NJX2tJxwRiW3bTvfvQE5jPZlx45W4KB2_Q0FbFo5JbFCw/exec'; 
+        const APPS_SCRIPT_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwLRqb8QWP7RsmguhAK7h2hOCcyuW1TiMNV0tbHBO_Mk107qfbTejkg_oh8tOIce9mF/exec'; 
 
         // DOM Elements
         const loadingMessage = document.getElementById('loading-message');
         const errorMessage = document.getElementById('error-message');
-        // 'kolomADataList' is now unused as its corresponding HTML element is removed
-        // const kolomADataList = document.getElementById('kolomA-data-list'); 
+        const kolomADataList = document.getElementById('kolomA-data-list'); 
         
         const updateMethodSelect = document.getElementById('update-method-select');
         const rowNumberInputGroup = document.getElementById('row-number-input-group');
@@ -279,8 +287,22 @@
 
         // --- Render Functions ---
 
-        // 'renderKolomAData()' is no longer needed/called as its HTML element is removed.
-        // It's removed from the JS code as well for cleanliness.
+        function renderKolomAData() {
+            kolomADataList.innerHTML = '';
+            if (sheetData.length === 0) {
+                kolomADataList.innerHTML = '<li class="text-center text-gray-500">Tidak ada data untuk ditampilkan.</li>';
+                return;
+            }
+            sheetData.slice(0, 5).forEach((item) => {
+                const li = document.createElement('li');
+                li.className = 'bg-blue-100 p-3 rounded-lg flex items-center justify-between shadow-sm hover:shadow-md transition-all duration-200';
+                li.innerHTML = `
+                    <span class="font-semibold text-blue-800">Baris ${item.id}:</span>
+                    <span class="text-blue-900 ml-2 flex-1 text-right truncate">${item.colA || 'N/A'}</span>
+                `;
+                kolomADataList.appendChild(li);
+            });
+        }
 
         function renderFullData() {
             fullDataList.innerHTML = '';
