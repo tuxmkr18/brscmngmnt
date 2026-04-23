@@ -3,19 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OrderUpdate BRSHOESCARE</title>
+    <title>Judul Website</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body {
             font-family: 'Inter', sans-serif;
-            /* Memastikan body tidak memiliki margin atau padding default browser */
             margin: 0;
             padding: 0;
-            overflow: hidden; /* Mencegah scrollbar jika ada sedikit overflow */
-            display: flex; /* Menggunakan flexbox untuk memposisikan konten */
-            flex-direction: column; /* Mengatur item dalam kolom */
-            min-height: 100vh; /* Memastikan body setidaknya setinggi viewport */
+            overflow: hidden; 
+            display: flex; 
+            flex-direction: column; 
+            min-height: 100vh; 
         }
         /* Styling untuk iframe-container agar memenuhi seluruh viewport */
         .iframe-container {
@@ -46,44 +45,41 @@
         }
         /* Style untuk teks disclaimer agar selalu berada di bagian bawah */
         .disclaimer-bar {
-            /* Mengatur posisi fixed di bagian bawah layar */
             position: fixed; 
             bottom: 0;       
             left: 0;         
-            width: 100vw;    /* Lebar penuh viewport */
-            background-color: rgba(0, 0, 0, 0.7); /* Latar belakang hitam semi-transparan */
-            color: white;    /* Teks putih agar kontras */
+            width: 100vw; 
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
             text-align: center;
             padding: 8px;
-            font-size: 0.75rem; /* Ukuran font lebih kecil */
-            z-index: 100;    /* Memastikan disclaimer berada di atas iframe */
+            font-size: 0.75rem; 
+            z-index: 100; 
         }
     </style>
 </head>
 <body>
 
     <!-- Container utama untuk seluruh konten, termasuk iframe dan disclaimer -->
-    <!-- Ini akan menjadi flex container utama untuk mengatur iframe dan disclaimer -->
-    <!-- Tidak lagi menggunakan class container dari Tailwind karena akan membatasi lebar -->
     <div class="flex flex-col w-screen min-h-screen">
 
         <!-- Div ini akan menampung iframe dan mengambil sebagian besar ruang layar -->
         <div class="iframe-container">
             <!-- Pesan loading yang akan disembunyikan saat iframe selesai dimuat -->
-            <div class="iframe-loading-text">Memuat aplikasi pesanan...</div>
+            <div class="iframe-loading-text">Memuat aplikasi...</div>
             
             <!-- Iframe yang menyematkan aplikasi Google Apps Script Anda -->
             <!-- PASTIKAN URL di atribut 'src' adalah URL Web App Apps Script Anda yang benar dan TERBARU -->
             <iframe 
-                src="https://script.google.com/macros/s/AKfycbwOD1B35U15_OsNtiP0doqGJF6n_Ln2XhdAM5U3E1gf8YEvPlMkAjBw5ccb-6IgzKitfg/exec" 
-                title="Aplikasi Pembaruan Pesanan BRSHOESCARE"
+                src="https://script.google.com/macros/s/AKf........./exec" 
+                title="Aplikasi ......"
                 onload="this.previousElementSibling.style.display='none';">
             </iframe>
         </div>
 
         <!-- Bar disclaimer yang akan selalu terlihat di bagian bawah layar -->
         <p class="disclaimer-bar">
-            Aplikasi ini khusus dirancang untuk intern-brsc management. DILARANG MEMBAGIKAN APLIKASI INI.
+            Copyright text.
         </p>
 
     </div>
